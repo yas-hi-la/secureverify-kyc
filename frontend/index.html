@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureVerify — Mobile Ownership Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink:      #0d1117;
+    --ink2:     #1c2431;
+    --ink3:     #2d3748;
+    --muted:    #64748b;
+    --line:     #e2e8f0;
+    --surface:  #f8fafc;
+    --white:    #ffffff;
+    --gold:     #c9a84c;
+    --gold2:    #e8c96d;
+    --green:    #0d9488;
+    --red:      #dc2626;
+    --orange:   #ea580c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── NAV ─────────────────────────────── */
+  nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-brand {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--ink);
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-brand span {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    background: var(--ink);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+
+  .nav-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── STEP INDICATOR ──────────────────── */
+  .steps-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    border: 2px solid var(--line);
+    color: var(--muted);
+    background: var(--white);
+    transition: all 0.3s;
+  }
+
+  .step-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.3s;
+  }
+
+  .step.active .step-num {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--gold);
+  }
+
+  .step.active .step-label { color: var(--ink); font-weight: 600; }
+
+  .step.done .step-num {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+
+  .step.done .step-label { color: var(--green); }
+
+  .step-connector {
+    width: 40px;
+    height: 2px;
+    background: var(--line);
+    flex-shrink: 0;
+    margin: 0 4px;
+  }
+
+  .step.done + .step-connector { background: var(--green); }
+
+  /* ── MAIN LAYOUT ─────────────────────── */
+  main {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px 60px;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 560px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    animation: slideUp 0.4s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-header {
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--ink);
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-header::after {
+    content: '';
+    position: absolute;
+    right: -20px;
+    top: -20px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.12);
+  }
+
+  .card-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+    position: relative;
+  }
+
+  .card-header p {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.6);
+    position: relative;
+  }
+
+  .card-body { padding: 32px; }
+
+  /* ── FORM ────────────────────────────── */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink3);
+    margin-bottom: 7px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    color: var(--ink);
+    background: var(--white);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(13,17,23,0.08);
+  }
+
+  input.error { border-color: var(--red); }
+  input.valid { border-color: var(--green); }
+
+  .field-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 5px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .field-error {
+    font-size: 0.72rem;
+    color: var(--red);
+    margin-top: 5px;
+    display: none;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── BUTTON ──────────────────────────── */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: white;
+  }
+
+  .btn-primary:hover { background: var(--ink2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { background: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── SECURITY BADGES ─────────────────── */
+  .security-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .sec-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.68rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    padding: 4px 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+
+  /* ── TOAST ───────────────────────────── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { background: var(--ink); color: white; border-left: 4px solid var(--green); }
+  #toast.error   { background: var(--ink); color: white; border-left: 4px solid var(--red); }
+
+  /* ── SPINNER ─────────────────────────── */
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 560px) {
+    .form-row { grid-template-columns: 1fr; }
+    .card-body { padding: 20px; }
+    .steps-bar { padding: 12px 16px; }
+    nav { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <span>🔐</span>
+    SecureVerify
+  </div>
+  <span class="nav-badge">KYC Platform</span>
+</nav>
+
+<!-- STEP BAR -->
+<div class="steps-bar">
+  <div class="step active" id="step1">
+    <div class="step-num">1</div>
+    <div class="step-label">Your Details</div>
+  </div>
+  <div class="step-connector"></div>
+  <div class="step" id="step2">
+    <div class="step-num">2</div>
+    <div class="step-label">OTP Verification</div>
+  </div>
+  <div class="step-connector"></div>
+  <div class="step" id="step3">
+    <div class="step-num">3</div>
+    <div class="step-label">Deep Verification</div>
+  </div>
+  <div class="step-connector"></div>
+  <div class="step" id="step4">
+    <div class="step-num">4</div>
+    <div class="step-label">Result</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+  <div class="card">
+    <div class="card-header">
+      <h2>Enter Your Details</h2>
+      <p>We'll send a one-time password to your registered mobile number</p>
+    </div>
+    <div class="card-body">
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="full_name" placeholder="As per Aadhaar card" autocomplete="name">
+        <div class="field-error" id="err_name">Please enter your full name</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date of Birth</label>
+          <input type="date" id="dob">
+          <div class="field-error" id="err_dob">Required</div>
+        </div>
+        <div class="form-group">
+          <label>Mobile Number</label>
+          <input type="tel" id="mobile" placeholder="10-digit number" maxlength="10">
+          <div class="field-error" id="err_mobile">Enter valid 10-digit mobile</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Aadhaar Number</label>
+        <input type="text" id="aadhaar" placeholder="12-digit Aadhaar" maxlength="12">
+        <div class="field-hint">Your 12-digit Aadhaar UID</div>
+        <div class="field-error" id="err_aadhaar">Enter valid 12-digit Aadhaar</div>
+      </div>
+
+      <div class="form-group">
+        <label>PAN Number <span style="color:var(--muted);font-weight:400">(Optional)</span></label>
+        <input type="text" id="pan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase">
+        <div class="field-error" id="err_pan">Invalid PAN format (e.g. ABCDE1234F)</div>
+      </div>
+
+      <button class="btn btn-primary" id="submitBtn" onclick="submitDetails()">
+        Send OTP →
+      </button>
+
+      <div class="security-row">
+        <div class="sec-badge">🔒 256-bit Encrypted</div>
+        <div class="sec-badge">📋 DPDP Act 2023</div>
+        <div class="sec-badge">🏦 RBI Compliant</div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8000/api';
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = `show ${type}`;
+    setTimeout(() => t.className = '', 3500);
+  }
+
+  function setLoading(loading) {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? '<div class="spinner"></div> Sending OTP...'
+      : 'Send OTP →';
+  }
+
+  function validate() {
+    let ok = true;
+
+    const name = document.getElementById('full_name').value.trim();
+    const dob  = document.getElementById('dob').value;
+    const mob  = document.getElementById('mobile').value.trim();
+    const aad  = document.getElementById('aadhaar').value.trim();
+    const pan  = document.getElementById('pan').value.trim().toUpperCase();
+
+    // Name
+    const nameErr = document.getElementById('err_name');
+    if (name.length < 2) {
+      document.getElementById('full_name').classList.add('error');
+      nameErr.style.display = 'block'; ok = false;
+    } else {
+      document.getElementById('full_name').classList.remove('error');
+      document.getElementById('full_name').classList.add('valid');
+      nameErr.style.display = 'none';
+    }
+
+    // DOB
+    const dobErr = document.getElementById('err_dob');
+    if (!dob) {
+      document.getElementById('dob').classList.add('error');
+      dobErr.style.display = 'block'; ok = false;
+    } else {
+      document.getElementById('dob').classList.remove('error');
+      document.getElementById('dob').classList.add('valid');
+      dobErr.style.display = 'none';
+    }
+
+    // Mobile
+    const mobErr = document.getElementById('err_mobile');
+    if (!/^[6-9]\d{9}$/.test(mob)) {
+      document.getElementById('mobile').classList.add('error');
+      mobErr.style.display = 'block'; ok = false;
+    } else {
+      document.getElementById('mobile').classList.remove('error');
+      document.getElementById('mobile').classList.add('valid');
+      mobErr.style.display = 'none';
+    }
+
+    // Aadhaar
+    const aadErr = document.getElementById('err_aadhaar');
+    if (!/^\d{12}$/.test(aad)) {
+      document.getElementById('aadhaar').classList.add('error');
+      aadErr.style.display = 'block'; ok = false;
+    } else {
+      document.getElementById('aadhaar').classList.remove('error');
+      document.getElementById('aadhaar').classList.add('valid');
+      aadErr.style.display = 'none';
+    }
+
+    // PAN (optional)
+    const panErr = document.getElementById('err_pan');
+    if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) {
+      document.getElementById('pan').classList.add('error');
+      panErr.style.display = 'block'; ok = false;
+    } else {
+      document.getElementById('pan').classList.remove('error');
+      panErr.style.display = 'none';
+    }
+
+    return ok;
+  }
+
+  async function submitDetails() {
+    if (!validate()) return;
+
+    setLoading(true);
+
+    const payload = {
+      full_name:      document.getElementById('full_name').value.trim(),
+      date_of_birth:  document.getElementById('dob').value,
+      mobile_number:  document.getElementById('mobile').value.trim(),
+      aadhaar_number: document.getElementById('aadhaar').value.trim(),
+      pan_number:     document.getElementById('pan').value.trim().toUpperCase() || null,
+    };
+
+    try {
+      const res  = await fetch(`${API}/otp/send`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.detail || 'Failed to send OTP', 'error');
+        setLoading(false);
+        return;
+      }
+
+      // Save session + customer data for next screens
+      sessionStorage.setItem('session_id',   data.session_id);
+      sessionStorage.setItem('mobile',        payload.mobile_number);
+      sessionStorage.setItem('expires_in',    data.expires_in_sec);
+      sessionStorage.setItem('customer_name', payload.full_name);
+
+      showToast(data.message || 'OTP sent!');
+      setTimeout(() => { window.location.href = 'otp.html'; }, 1000);
+
+    } catch (err) {
+      showToast('Cannot connect to server. Is the backend running?', 'error');
+      setLoading(false);
+    }
+  }
+
+  // Auto-uppercase PAN
+  document.getElementById('pan').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+
+  // Only numbers for Aadhaar and mobile
+  document.getElementById('aadhaar').addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '');
+  });
+  document.getElementById('mobile').addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '');
+  });
+</script>
+</body>
+</html>

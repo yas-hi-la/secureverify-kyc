@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureVerify — Verification Result</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d1117; --ink2: #1c2431; --ink3: #2d3748;
+    --muted: #64748b; --line: #e2e8f0; --surface: #f8fafc;
+    --white: #ffffff; --gold: #c9a84c;
+    --green: #0d9488; --green-bg: #f0fdfa; --green-border: #99f6e4;
+    --red: #dc2626;   --red-bg: #fff1f2;   --red-border: #fecdd3;
+    --orange: #ea580c; --orange-bg: #fff7ed; --orange-border: #fed7aa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif; background: var(--surface);
+    color: var(--ink); min-height: 100vh; display: flex; flex-direction: column;
+  }
+
+  nav {
+    background: var(--white); border-bottom: 1px solid var(--line);
+    padding: 0 32px; height: 64px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  .nav-brand { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+  .nav-brand span { width: 32px; height: 32px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1rem; }
+  .nav-badge { font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 3px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  .steps-bar { background: var(--white); border-bottom: 1px solid var(--line); padding: 16px 32px; display: flex; align-items: center; gap: 0; overflow-x: auto; }
+  .step { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; border: 2px solid var(--line); color: var(--muted); background: var(--white); transition: all 0.3s; }
+  .step-label { font-size: 0.78rem; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .step.done .step-num { background: var(--green); border-color: var(--green); color: white; }
+  .step.done .step-label { color: var(--green); font-weight: 600; }
+  .step-connector { width: 40px; height: 2px; background: var(--green); flex-shrink: 0; margin: 0 4px; }
+
+  main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 40px 20px 60px; }
+
+  .container { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px; animation: slideUp 0.4s ease; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── RESULT HERO ─────────────────────── */
+  .result-hero {
+    border-radius: 16px; padding: 32px; text-align: center;
+    border: 1px solid; overflow: hidden; position: relative;
+  }
+
+  .result-hero.VERIFIED {
+    background: var(--green-bg); border-color: var(--green-border);
+  }
+  .result-hero.FLAGGED {
+    background: var(--orange-bg); border-color: var(--orange-border);
+  }
+  .result-hero.REJECTED {
+    background: var(--red-bg); border-color: var(--red-border);
+  }
+
+  .result-icon { font-size: 3.5rem; margin-bottom: 12px; display: block; }
+
+  .result-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem; margin-bottom: 8px;
+  }
+
+  .result-title.VERIFIED { color: var(--green); }
+  .result-title.FLAGGED  { color: var(--orange); }
+  .result-title.REJECTED { color: var(--red); }
+
+  .result-subtitle { font-size: 0.88rem; color: var(--muted); max-width: 380px; margin: 0 auto 20px; }
+
+  /* ── TRUST SCORE RING ────────────────── */
+  .score-ring {
+    width: 120px; height: 120px; margin: 0 auto 16px;
+    position: relative;
+  }
+
+  .score-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+
+  .score-track { fill: none; stroke: rgba(0,0,0,0.08); stroke-width: 8; }
+
+  .score-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease; }
+
+  .score-fill.VERIFIED { stroke: var(--green); }
+  .score-fill.FLAGGED  { stroke: var(--orange); }
+  .score-fill.REJECTED { stroke: var(--red); }
+
+  .score-text {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  .score-number {
+    font-family: 'DM Mono', monospace; font-size: 1.6rem; font-weight: 500; line-height: 1;
+  }
+
+  .score-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* ── LAYERS BREAKDOWN ────────────────── */
+  .card {
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: 16px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+
+  .card-title {
+    padding: 18px 24px; border-bottom: 1px solid var(--line);
+    font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+  }
+
+  .layer-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 24px; border-bottom: 1px solid var(--line);
+  }
+
+  .layer-row:last-child { border-bottom: none; }
+
+  .layer-icon-box {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+
+  .layer-info { flex: 1; }
+
+  .layer-title { font-size: 0.85rem; font-weight: 600; margin-bottom: 2px; }
+
+  .layer-sub   { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  .layer-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+  .layer-score { font-family: 'DM Mono', monospace; font-size: 0.9rem; font-weight: 500; }
+
+  .layer-score.pass { color: var(--green); }
+  .layer-score.fail { color: var(--red); }
+
+  .layer-pill {
+    font-size: 0.62rem; padding: 2px 8px; border-radius: 20px;
+    font-family: 'DM Mono', monospace; font-weight: 500;
+  }
+  .pill-pass { background: rgba(13,148,136,0.1); color: var(--green); border: 1px solid rgba(13,148,136,0.2); }
+  .pill-fail { background: rgba(220,38,38,0.1); color: var(--red); border: 1px solid rgba(220,38,38,0.2); }
+
+  /* ── SCORE BAR ───────────────────────── */
+  .score-bar-wrap { padding: 0 24px 16px; }
+
+  .score-bar-track {
+    height: 6px; background: var(--line); border-radius: 10px; overflow: hidden; margin-top: 6px;
+  }
+
+  .score-bar-fill {
+    height: 100%; border-radius: 10px; transition: width 1s ease;
+  }
+
+  .fill-pass { background: var(--green); }
+  .fill-fail { background: var(--red); }
+
+  /* ── FAILURE REASON ──────────────────── */
+  .failure-box {
+    background: var(--red-bg); border: 1px solid var(--red-border);
+    border-radius: 12px; padding: 16px 20px;
+  }
+
+  .failure-box-title {
+    font-size: 0.75rem; font-weight: 700; color: var(--red);
+    letter-spacing: 1px; text-transform: uppercase;
+    font-family: 'DM Mono', monospace; margin-bottom: 8px;
+  }
+
+  .failure-items { list-style: none; }
+
+  .failure-items li {
+    font-size: 0.82rem; color: #7f1d1d; padding: 3px 0;
+    padding-left: 16px; position: relative;
+  }
+
+  .failure-items li::before { content: '→'; position: absolute; left: 0; }
+
+  /* ── ACTION BUTTONS ──────────────────── */
+  .action-row { display: flex; gap: 12px; }
+
+  .btn {
+    flex: 1; padding: 13px; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+
+  .btn-primary { background: var(--ink); color: white; }
+  .btn-primary:hover { background: var(--ink2); transform: translateY(-1px); }
+
+  .btn-ghost { background: var(--white); color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--ink); }
+
+  /* ── AUDIT SECTION ───────────────────── */
+  .audit-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 24px; border-bottom: 1px solid var(--line); font-size: 0.78rem;
+  }
+
+  .audit-row:last-child { border-bottom: none; }
+  .audit-key { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; }
+  .audit-val { font-weight: 500; font-family: 'DM Mono', monospace; font-size: 0.72rem; }
+
+  @media (max-width: 480px) {
+    .action-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span>🔐</span> SecureVerify</div>
+  <span class="nav-badge">KYC Platform</span>
+</nav>
+
+<div class="steps-bar">
+  <div class="step done"><div class="step-num">✓</div><div class="step-label">Your Details</div></div>
+  <div class="step-connector"></div>
+  <div class="step done"><div class="step-num">✓</div><div class="step-label">OTP Verification</div></div>
+  <div class="step-connector"></div>
+  <div class="step done"><div class="step-num">✓</div><div class="step-label">Deep Verification</div></div>
+  <div class="step-connector"></div>
+  <div class="step done"><div class="step-num">✓</div><div class="step-label">Result</div></div>
+</div>
+
+<main>
+  <div class="container" id="container">
+    <div style="text-align:center;padding:60px;color:var(--muted);font-family:'DM Mono',monospace;font-size:0.85rem">
+      Loading result...
+    </div>
+  </div>
+</main>
+
+<script>
+  const raw = sessionStorage.getItem('verif_result');
+  if (!raw) { window.location.href = 'index.html'; }
+
+  const data   = JSON.parse(raw);
+  const result = data.overall_result;   // VERIFIED / FLAGGED / REJECTED
+
+  const icons = { VERIFIED: '✅', FLAGGED: '⚠️', REJECTED: '❌' };
+  const titles = {
+    VERIFIED: 'Identity Verified',
+    FLAGGED:  'Flagged for Review',
+    REJECTED: 'Verification Failed',
+  };
+  const subtitles = {
+    VERIFIED: 'All 3 layers passed. Account activation is approved.',
+    FLAGGED:  'Some checks require manual review by a compliance officer.',
+    REJECTED: 'Verification could not be completed. Please visit your nearest branch.',
+  };
+
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference - (data.trust_score / 100) * circumference;
+
+  const layers = [
+    {
+      key:   'sim',
+      icon:  '📶',
+      name:  'SIM Verification',
+      sub:   'Telecom subscriber match',
+      res:   data.sim_layer,
+    },
+    {
+      key:   'fp',
+      icon:  '👆',
+      name:  'Fingerprint Biometric',
+      sub:   'UIDAI Aadhaar authentication',
+      res:   data.fingerprint_layer,
+    },
+    {
+      key:   'kyc',
+      icon:  '🗃️',
+      name:  'KYC Cross-Check',
+      sub:   'CERSAI / CKYCR registry',
+      res:   data.kyc_layer,
+    },
+  ];
+
+  function layerRows() {
+    return layers.map(l => `
+      <div class="layer-row">
+        <div class="layer-icon-box">${l.icon}</div>
+        <div class="layer-info">
+          <div class="layer-title">${l.name}</div>
+          <div class="layer-sub">${l.sub}</div>
+        </div>
+        <div class="layer-right">
+          <div class="layer-score ${l.res.passed ? 'pass' : 'fail'}">${l.res.score}/100</div>
+          <span class="layer-pill ${l.res.passed ? 'pill-pass' : 'pill-fail'}">${l.res.passed ? 'PASSED' : 'FAILED'}</span>
+        </div>
+      </div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-track">
+          <div class="score-bar-fill ${l.res.passed ? 'fill-pass' : 'fill-fail'}"
+               id="bar_${l.key}" style="width:0%"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function failureBox() {
+    if (!data.failure_reason) return '';
+    const items = data.failure_reason.split(';').map(r => `<li>${r.trim()}</li>`).join('');
+    return `
+      <div class="failure-box">
+        <div class="failure-box-title">⚠ Failure Reasons</div>
+        <ul class="failure-items">${items}</ul>
+      </div>
+    `;
+  }
+
+  function auditInfo() {
+    return `
+      <div class="audit-row">
+        <span class="audit-key">SESSION ID</span>
+        <span class="audit-val">${data.session_id.slice(0,18)}...</span>
+      </div>
+      <div class="audit-row">
+        <span class="audit-key">TRUST SCORE</span>
+        <span class="audit-val">${data.trust_score} / 100</span>
+      </div>
+      <div class="audit-row">
+        <span class="audit-key">RESULT</span>
+        <span class="audit-val" style="color:${result==='VERIFIED'?'var(--green)':result==='FLAGGED'?'var(--orange)':'var(--red)'}">${result}</span>
+      </div>
+      <div class="audit-row">
+        <span class="audit-key">DPDP ACT 2023</span>
+        <span class="audit-val" style="color:var(--green)">COMPLIANT ✓</span>
+      </div>
+    `;
+  }
+
+  // Render
+  document.getElementById('container').innerHTML = `
+
+    <!-- HERO -->
+    <div class="result-hero ${result}">
+      <span class="result-icon">${icons[result]}</span>
+      <div class="result-title ${result}">${titles[result]}</div>
+      <div class="result-subtitle">${subtitles[result]}</div>
+
+      <div class="score-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="score-track" cx="60" cy="60" r="52"/>
+          <circle class="score-fill ${result}" cx="60" cy="60" r="52"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${circumference}"
+            id="scoreCircle"/>
+        </svg>
+        <div class="score-text">
+          <div class="score-number" id="scoreNum">0</div>
+          <div class="score-label">Trust Score</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAYERS BREAKDOWN -->
+    <div class="card">
+      <div class="card-title">Verification Layer Results</div>
+      ${layerRows()}
+    </div>
+
+    <!-- FAILURE REASON (if any) -->
+    ${failureBox()}
+
+    <!-- AUDIT INFO -->
+    <div class="card">
+      <div class="card-title">Audit Record</div>
+      ${auditInfo()}
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="action-row">
+      <button class="btn btn-ghost" onclick="window.print()">🖨 Print Report</button>
+      <button class="btn btn-primary" onclick="startNew()">Start New Verification</button>
+    </div>
+
+  `;
+
+  // Animate score ring + counter after render
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const circle = document.getElementById('scoreCircle');
+      if (circle) circle.style.strokeDashoffset = offset;
+
+      // Count-up animation
+      const target  = data.trust_score;
+      const numEl   = document.getElementById('scoreNum');
+      let current   = 0;
+      const step    = target / 60;
+      const counter = setInterval(() => {
+        current = Math.min(current + step, target);
+        numEl.textContent = Math.round(current);
+        if (current >= target) clearInterval(counter);
+      }, 25);
+
+      // Animate bars
+      layers.forEach(l => {
+        const bar = document.getElementById(`bar_${l.key}`);
+        if (bar) setTimeout(() => { bar.style.width = l.res.score + '%'; }, 200);
+      });
+    }, 100);
+  });
+
+  function startNew() {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+  }
+</script>
+</body>
+</html>

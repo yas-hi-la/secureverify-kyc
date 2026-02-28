@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Number Ownership Verification Flowchart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --border: #1e2d45;
+    --accent1: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --accent5: #f97316;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding: 40px 20px 60px;
+    background-image: 
+      radial-gradient(ellipse at 10% 10%, rgba(0,212,255,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 90%, rgba(0,255,157,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(249,115,22,0.03) 0%, transparent 60%);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.1rem, 3vw, 1.7rem);
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.68rem;
+    margin-bottom: 36px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .phase-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    display: inline-block;
+  }
+  .phase-otp  { background: rgba(249,115,22,0.12); color: var(--accent5); border: 1px solid rgba(249,115,22,0.35); }
+  .phase-deep { background: rgba(0,212,255,0.1);   color: var(--accent1); border: 1px solid rgba(0,212,255,0.3); }
+
+  .phase-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .phase-section {
+    width: 100%;
+    border-radius: 14px;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .phase-section.otp-section {
+    background: rgba(249,115,22,0.04);
+    border: 1px solid rgba(249,115,22,0.2);
+  }
+
+  .phase-section.deep-section {
+    background: rgba(0,212,255,0.03);
+    border: 1px solid rgba(0,212,255,0.15);
+  }
+
+  .node {
+    width: 100%;
+    max-width: 500px;
+    opacity: 0;
+    animation: fadeIn 0.45s ease forwards;
+  }
+
+  .node-inner {
+    border-radius: 10px;
+    padding: 13px 18px;
+    border: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.45;
+  }
+
+  .node.start .node-inner {
+    border-radius: 50px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.04));
+    border-color: var(--accent1);
+    color: var(--accent1);
+    box-shadow: 0 0 22px rgba(0,212,255,0.18);
+  }
+
+  .node.process .node-inner {
+    background: rgba(17,24,39,0.85);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .node.otp-node .node-inner {
+    background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(17,10,2,0.85));
+    border-color: rgba(249,115,22,0.4);
+    color: #fdba74;
+  }
+
+  .node.decision .node-inner {
+    background: linear-gradient(135deg, rgba(255,209,102,0.1), rgba(20,15,5,0.85));
+    border-color: rgba(255,209,102,0.5);
+    color: var(--accent4);
+    clip-path: polygon(22px 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 22px 100%, 0% 50%);
+    border-radius: 0;
+    padding: 13px 44px;
+    border: none;
+  }
+
+  .node.decision { max-width: 400px; }
+
+  .arrow { display:flex; flex-direction:column; align-items:center; }
+  .arrow-line { width:2px; height:24px; background:linear-gradient(to bottom,rgba(100,116,139,0.6),rgba(100,116,139,0.25)); }
+  .arrow-line.orange { background:linear-gradient(to bottom,rgba(249,115,22,0.7),rgba(249,115,22,0.3)); }
+  .arrow-line.green  { background:linear-gradient(to bottom,rgba(0,255,157,0.7),rgba(0,255,157,0.3)); }
+  .arrow-line.red    { background:linear-gradient(to bottom,rgba(255,107,107,0.7),rgba(255,107,107,0.3)); }
+  .arrow-line.blue   { background:linear-gradient(to bottom,rgba(0,212,255,0.7),rgba(0,212,255,0.3)); }
+  .arrow-head        { width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #64748b;margin-top:-1px; }
+  .arrow-head.orange { border-top-color:var(--accent5); }
+  .arrow-head.green  { border-top-color:var(--accent2); }
+  .arrow-head.red    { border-top-color:var(--accent3); }
+  .arrow-head.blue   { border-top-color:var(--accent1); }
+
+  .phase-connector {
+    display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 0; width:100%; max-width:500px;
+  }
+  .phase-connector-label {
+    font-size:0.62rem; letter-spacing:2px; text-transform:uppercase; color:var(--accent1); font-weight:600;
+    background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); padding:3px 12px; border-radius:20px;
+  }
+
+  .split-container {
+    width:100%; max-width:760px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; position:relative;
+  }
+  .split-container::before {
+    content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:calc(100% - 60px); height:2px;
+    background:linear-gradient(to right, transparent, rgba(0,212,255,0.3), rgba(0,212,255,0.3), transparent);
+  }
+
+  .split-branch { display:flex; flex-direction:column; align-items:center; gap:0; padding-top:18px; }
+
+  .branch-label {
+    font-family:'Syne',sans-serif; font-size:0.6rem; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; margin-bottom:7px; padding:3px 9px; border-radius:20px;
+  }
+  .branch-label.l1 { background:rgba(0,212,255,0.1);  color:var(--accent1); border:1px solid rgba(0,212,255,0.3); }
+  .branch-label.l2 { background:rgba(0,255,157,0.1);  color:var(--accent2); border:1px solid rgba(0,255,157,0.3); }
+  .branch-label.l3 { background:rgba(168,85,247,0.1); color:#c084fc;        border:1px solid rgba(168,85,247,0.3); }
+
+  .branch-node {
+    width:100%; border-radius:8px; padding:9px 10px; font-size:0.7rem;
+    text-align:center; line-height:1.4; margin-bottom:0;
+  }
+  .branch-node.b1 { background:rgba(0,212,255,0.07);  border:1px solid rgba(0,212,255,0.22);  color:#93c5fd; }
+  .branch-node.b2 { background:rgba(0,255,157,0.07);  border:1px solid rgba(0,255,157,0.22);  color:#86efac; }
+  .branch-node.b3 { background:rgba(168,85,247,0.07); border:1px solid rgba(168,85,247,0.22); color:#d8b4fe; }
+
+  .merge-arrow { width:100%; max-width:760px; height:38px; }
+
+  .trust-score {
+    max-width:500px; width:100%; border-radius:12px;
+    background:linear-gradient(135deg,rgba(17,24,39,0.9),rgba(10,14,26,0.9));
+    border:1px solid var(--border); padding:14px 18px;
+  }
+  .trust-score-title {
+    font-family:'Syne',sans-serif; font-size:0.67rem; font-weight:700; letter-spacing:3px;
+    text-transform:uppercase; color:var(--muted); margin-bottom:10px; text-align:center;
+  }
+  .trust-items { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .trust-item  { display:flex; align-items:center; gap:7px; font-size:0.69rem; color:var(--text); }
+  .trust-dot   { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .dot-blue    { background:var(--accent1); box-shadow:0 0 6px var(--accent1); }
+  .dot-green   { background:var(--accent2); box-shadow:0 0 6px var(--accent2); }
+  .dot-purple  { background:#c084fc;        box-shadow:0 0 6px #c084fc; }
+  .dot-yellow  { background:var(--accent4); box-shadow:0 0 6px var(--accent4); }
+
+  .decision-branches {
+    width:100%; max-width:580px; display:flex; justify-content:space-between;
+    align-items:flex-start; gap:16px; position:relative;
+  }
+  .decision-branches::before {
+    content:''; position:absolute; top:0; left:12%; width:76%; height:2px; background:var(--border);
+  }
+  .dec-branch { display:flex; flex-direction:column; align-items:center; flex:1; padding-top:18px; }
+  .dec-branch-line { width:2px; height:18px; margin-bottom:5px; }
+  .dec-branch-line.pass { background:var(--accent2); }
+  .dec-branch-line.fail { background:var(--accent3); }
+  .dec-branch-label { font-size:0.62rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:7px; }
+  .dec-branch-label.pass { color:var(--accent2); }
+  .dec-branch-label.fail { color:var(--accent3); }
+
+  .badge {
+    display:inline-block; font-size:0.58rem; padding:2px 7px; border-radius:20px;
+    margin-left:5px; vertical-align:middle; font-weight:400;
+  }
+  .badge-blue  { background:rgba(0,212,255,0.12); color:var(--accent1); border:1px solid rgba(0,212,255,0.3); }
+  .badge-green { background:rgba(0,255,157,0.12); color:var(--accent2); border:1px solid rgba(0,255,157,0.3); }
+
+  @keyframes fadeIn {
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<h1>Mobile Number Ownership Verification</h1>
+<p class="subtitle">OTP Entry → Fingerprint + SIM + KYC — Full Authentication Flow</p>
+
+<div class="phase-wrapper">
+
+  <!-- ══════════════════════════════════
+       PHASE 1 — OTP VERIFICATION
+  ══════════════════════════════════════ -->
+  <div style="display:flex;flex-direction:column;align-items:center;width:100%">
+    <span class="phase-label phase-otp">Phase 1 — OTP Verification</span>
+  </div>
+
+  <div class="phase-section otp-section">
+
+    <div class="node start" style="animation-delay:0.05s">
+      <div class="node-inner">🏦 Customer Visits Bank Branch / Opens App</div>
+    </div>
+
+    <div class="arrow"><div class="arrow-line orange"></div><div class="arrow-head orange"></div></div>
+
+    <div class="node otp-node" style="animation-delay:0.1s">
+      <div class="node-inner">
+        📝 Customer Enters Details<br>
+        <span style="font-size:0.7rem;font-weight:400;color:rgba(253,186,116,0.7)">Full Name &nbsp;·&nbsp; Date of Birth &nbsp;·&nbsp; Aadhaar / PAN &nbsp;·&nbsp; Mobile Number</span>
+      </div>
+    </div>
+
+    <div class="arrow"><div class="arrow-line orange"></div><div class="arrow-head orange"></div></div>
+
+    <!-- FORMAT CHECK -->
+    <div class="node decision" style="animation-delay:0.15s">
+      <div class="node-inner">Valid 10-digit<br>mobile number format?</div>
+    </div>
+
+    <div style="width:100%;max-width:500px;height:2px;background:rgba(249,115,22,0.2);opacity:0;animation:fadeIn 0.45s ease 0.2s forwards"></div>
+
+    <div style="width:100%;max-width:500px;display:flex;justify-content:space-between;gap:14px;opacity:0;animation:fadeIn 0.45s ease 0.22s forwards">
+
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding-top:16px">
+        <div style="width:2px;height:14px;background:var(--accent3);margin-bottom:4px"></div>
+        <div style="font-size:0.6rem;font-weight:700;color:var(--accent3);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">✗ Invalid</div>
+        <div style="width:100%;border-radius:8px;padding:8px 10px;font-size:0.7rem;text-align:center;background:rgba(255,107,107,0.07);border:1px solid rgba(255,107,107,0.25);color:#fca5a5;line-height:1.4">
+          ⚠ Show Error Message<br>
+          <span style="font-size:0.64rem;opacity:0.75">Highlight mobile field<br>Ask to re-enter</span>
+        </div>
+      </div>
+
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding-top:16px">
+        <div style="width:2px;height:14px;background:var(--accent5);margin-bottom:4px"></div>
+        <div style="font-size:0.6rem;font-weight:700;color:var(--accent5);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">✓ Valid</div>
+        <div style="width:100%;border-radius:8px;padding:8px 10px;font-size:0.7rem;text-align:center;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);color:#fdba74;line-height:1.4">
+          ✅ Format Accepted<br>
+          <span style="font-size:0.64rem;opacity:0.75">Proceed to OTP dispatch</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="arrow" style="margin-top:6px"><div class="arrow-line orange"></div><div class="arrow-head orange"></div></div>
+
+    <!-- SEND OTP -->
+    <div class="node otp-node" style="animation-delay:0.35s">
+      <div class="node-inner">
+        📤 System Generates &amp; Sends OTP<br>
+        <span style="font-size:0.68rem;font-weight:400;color:rgba(253,186,116,0.65)">6-digit code · Expires in 5 minutes · Delivered via SMS</span>
+      </div>
+    </div>
+
+    <div class="arrow"><div class="arrow-line orange"></div><div class="arrow-head orange"></div></div>
+
+    <!-- CUSTOMER ENTERS OTP -->
+    <div class="node otp-node" style="animation-delay:0.42s">
+      <div class="node-inner">
+        🔢 Customer Receives SMS &amp; Enters OTP on Screen
+      </div>
+    </div>
+
+    <div class="arrow"><div class="arrow-line orange"></div><div class="arrow-head orange"></div></div>
+
+    <!-- OTP VALID? -->
+    <div class="node decision" style="animation-delay:0.48s">
+      <div class="node-inner">OTP Correct &amp;<br>Within 5-min Time Limit?</div>
+    </div>
+
+    <div style="width:100%;max-width:500px;height:2px;background:rgba(249,115,22,0.2);opacity:0;animation:fadeIn 0.45s ease 0.52s forwards"></div>
+
+    <div style="width:100%;max-width:500px;display:flex;justify-content:space-between;gap:14px;opacity:0;animation:fadeIn 0.45s ease 0.54s forwards">
+
+      <!-- WRONG OTP -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding-top:16px">
+        <div style="width:2px;height:14px;background:var(--accent3);margin-bottom:4px"></div>
+        <div style="font-size:0.6rem;font-weight:700;color:var(--accent3);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">✗ Wrong / Expired</div>
+        <div style="width:100%;border-radius:8px;padding:9px 10px;font-size:0.7rem;text-align:center;background:rgba(255,107,107,0.07);border:1px solid rgba(255,107,107,0.25);color:#fca5a5;line-height:1.4">
+          ❌ OTP Mismatch<br>
+          <span style="font-size:0.63rem;opacity:0.75">Attempts remaining?<br>Max 3 tries allowed</span>
+        </div>
+        <div style="width:2px;height:12px;background:rgba(255,107,107,0.4);margin:4px 0"></div>
+        <div style="width:100%;border-radius:8px;padding:8px 10px;font-size:0.68rem;text-align:center;background:rgba(255,107,107,0.05);border:1px solid rgba(255,107,107,0.18);color:#fca5a5;line-height:1.35">
+          🔁 Resend OTP Option<br>
+          <span style="font-size:0.62rem;opacity:0.7">(30 second cooldown)</span>
+        </div>
+        <div style="width:2px;height:12px;background:rgba(255,107,107,0.4);margin:4px 0"></div>
+        <div style="width:100%;border-radius:8px;padding:8px 10px;font-size:0.68rem;text-align:center;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.3);color:#fca5a5">
+          🚫 All Retries Exhausted<br>Session Locked (24h)
+        </div>
+      </div>
+
+      <!-- CORRECT OTP -->
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding-top:16px">
+        <div style="width:2px;height:14px;background:var(--accent5);margin-bottom:4px"></div>
+        <div style="font-size:0.6rem;font-weight:700;color:var(--accent5);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px">✓ Correct</div>
+        <div style="width:100%;border-radius:8px;padding:9px 10px;font-size:0.7rem;text-align:center;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.3);color:#fdba74;line-height:1.4">
+          ✅ OTP Verified<br>
+          <span style="font-size:0.63rem;opacity:0.75">Phone is reachable ✓</span>
+        </div>
+        <div style="width:2px;height:12px;background:rgba(249,115,22,0.4);margin:4px 0"></div>
+        <div style="width:100%;border-radius:8px;padding:7px 10px;font-size:0.66rem;text-align:center;background:rgba(249,115,22,0.05);border:1px dashed rgba(249,115,22,0.3);color:#fb923c;line-height:1.35">
+          ⚠ OTP only confirms phone access<br>NOT true subscriber ownership<br>→ Proceed to Deep Verification
+        </div>
+      </div>
+
+    </div>
+
+  </div><!-- /otp-section -->
+
+  <!-- PHASE CONNECTOR -->
+  <div class="phase-connector" style="opacity:0;animation:fadeIn 0.45s ease 0.7s forwards">
+    <div style="width:2px;height:18px;background:linear-gradient(to bottom,rgba(249,115,22,0.5),rgba(0,212,255,0.5))"></div>
+    <span class="phase-connector-label">OTP Passed → Escalate to Deep Verification</span>
+    <div style="width:2px;height:18px;background:linear-gradient(to bottom,rgba(0,212,255,0.5),rgba(0,212,255,0.2))"></div>
+    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid rgba(0,212,255,0.5);margin-top:-1px"></div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       PHASE 2 — DEEP 3-LAYER VERIFY
+  ══════════════════════════════════════ -->
+  <div style="display:flex;flex-direction:column;align-items:center;width:100%">
+    <span class="phase-label phase-deep">Phase 2 — Deep 3-Layer Verification</span>
+  </div>
+
+  <div class="phase-section deep-section">
+
+    <div class="split-container" style="opacity:0;animation:fadeIn 0.45s ease 0.8s forwards">
+
+      <div class="split-branch">
+        <span class="branch-label l1">Layer 1</span>
+        <div class="branch-node b1" style="font-weight:700;margin-bottom:7px">📶 SIM Verification</div>
+        <div class="arrow" style="margin:3px 0"><div class="arrow-line" style="height:12px;background:rgba(0,212,255,0.4)"></div><div class="arrow-head blue"></div></div>
+        <div class="branch-node b1">Telecom API<br><span style="opacity:0.7">(Jio / Airtel / DoT)</span></div>
+        <div class="arrow" style="margin:3px 0"><div class="arrow-line" style="height:12px;background:rgba(0,212,255,0.4)"></div><div class="arrow-head blue"></div></div>
+        <div class="branch-node b1">• Subscriber name match<br>• SIM active status<br>• Recent SIM swap?</div>
+      </div>
+
+      <div class="split-branch">
+        <span class="branch-label l2">Layer 2</span>
+        <div class="branch-node b2" style="font-weight:700;margin-bottom:7px">👆 Fingerprint Bio</div>
+        <div class="arrow" style="margin:3px 0"><div class="arrow-line" style="height:12px;background:rgba(0,255,157,0.4)"></div><div class="arrow-head green"></div></div>
+        <div class="branch-node b2">Scan Fingerprint<br><span style="opacity:0.7">(Branch / App)</span></div>
+        <div class="arrow" style="margin:3px 0"><div class="arrow-line" style="height:12px;background:rgba(0,255,157,0.4)"></div><div class="arrow-head green"></div></div>
+        <div class="branch-node b2">UIDAI Aadhaar API<br>+ Liveness Detection</div>
+      </div>
+
+      <div class="split-branch">
+        <span class="branch-label l3">Layer 3</span>
+        <div class="branch-node b3" style="font-weight:700;margin-bottom:7px">🗃️ KYC Cross-Check</div>
+        <div class="arrow" style="margin:3px 0"><div class="arrow-line" style="height:12px;background:rgba(168,85,247,0.4)"></div><div class="arrow-head" style="border-top-color:#c084fc"></div></div>
+        <div class="branch-node b3">CERSAI / CKYCR<br><span style="opacity:0.7">Registry</span></div>
+        <div class="arrow" style="margin:3px 0"><div class="arrow-line" style="height:12px;background:rgba(168,85,247,0.4)"></div><div class="arrow-head" style="border-top-color:#c084fc"></div></div>
+        <div class="branch-node b3">• Name match<br>• PAN / Aadhaar link<br>• Existing records</div>
+      </div>
+
+    </div>
+
+    <div class="merge-arrow" style="opacity:0;animation:fadeIn 0.45s ease 0.9s forwards">
+      <svg viewBox="0 0 760 38" preserveAspectRatio="none">
+        <line x1="120" y1="0" x2="380" y2="34" stroke="#1e2d45" stroke-width="1.5"/>
+        <line x1="380" y1="0" x2="380" y2="34" stroke="#1e2d45" stroke-width="1.5"/>
+        <line x1="640" y1="0" x2="380" y2="34" stroke="#1e2d45" stroke-width="1.5"/>
+        <polygon points="374,30 386,30 380,38" fill="#1e2d45"/>
+      </svg>
+    </div>
+
+    <div class="node" style="max-width:500px;opacity:0;animation:fadeIn 0.45s ease 1s forwards">
+      <div class="trust-score">
+        <div class="trust-score-title">⚡ AI Trust Score Engine</div>
+        <div class="trust-items">
+          <div class="trust-item"><div class="trust-dot dot-blue"></div>SIM Subscriber == Aadhaar Name?</div>
+          <div class="trust-item"><div class="trust-dot dot-green"></div>Fingerprint matches UIDAI record?</div>
+          <div class="trust-item"><div class="trust-dot dot-purple"></div>KYC Name == Bank records?</div>
+          <div class="trust-item"><div class="trust-dot dot-yellow"></div>No recent SIM swap flagged?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow" style="opacity:0;animation:fadeIn 0.45s ease 1.05s forwards"><div class="arrow-line blue"></div><div class="arrow-head blue"></div></div>
+
+    <div class="node decision" style="opacity:0;animation:fadeIn 0.45s ease 1.1s forwards">
+      <div class="node-inner">All 3 Layers Pass?</div>
+    </div>
+
+    <div style="width:100%;max-width:500px;height:2px;background:var(--border);opacity:0;animation:fadeIn 0.45s ease 1.15s forwards"></div>
+
+    <div class="decision-branches" style="opacity:0;animation:fadeIn 0.45s ease 1.18s forwards">
+
+      <div class="dec-branch">
+        <div class="dec-branch-line fail"></div>
+        <div class="dec-branch-label fail">✗ One or More Fail</div>
+        <div style="width:100%;border-radius:8px;padding:10px 12px;font-size:0.73rem;text-align:center;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.3);color:#fca5a5;line-height:1.4">
+          🚩 Flagged for Manual Review<br>
+          <span style="font-size:0.63rem;opacity:0.75">Compliance officer notified</span>
+        </div>
+        <div style="width:2px;height:14px;background:rgba(255,107,107,0.5);margin:5px 0"></div>
+        <div style="width:100%;border-radius:8px;padding:8px 10px;font-size:0.68rem;text-align:center;background:rgba(255,107,107,0.05);border:1px solid rgba(255,107,107,0.2);color:#fca5a5">
+          Re-verification or<br>Account Rejection
+        </div>
+      </div>
+
+      <div class="dec-branch">
+        <div class="dec-branch-line pass"></div>
+        <div class="dec-branch-label pass">✓ All Pass</div>
+        <div style="width:100%;border-radius:8px;padding:10px 12px;font-size:0.73rem;text-align:center;background:rgba(0,255,157,0.08);border:1px solid rgba(0,255,157,0.3);color:#86efac;line-height:1.4">
+          ✅ Identity Fully Verified<br>
+          <span style="font-size:0.63rem;opacity:0.75">High trust score assigned</span>
+        </div>
+        <div style="width:2px;height:14px;background:rgba(0,255,157,0.5);margin:5px 0"></div>
+        <div style="width:100%;border-radius:8px;padding:8px 10px;font-size:0.68rem;text-align:center;background:rgba(0,255,157,0.05);border:1px solid rgba(0,255,157,0.2);color:#86efac">
+          🏦 Account Activated<br>KYC Record Updated
+        </div>
+      </div>
+
+    </div>
+
+    <div class="arrow" style="margin-top:14px;opacity:0;animation:fadeIn 0.45s ease 1.3s forwards"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+    <div class="node process" style="opacity:0;animation:fadeIn 0.45s ease 1.35s forwards">
+      <div class="node-inner" style="font-size:0.73rem">
+        📁 Audit Log Stored
+        <span class="badge badge-blue">DPDP Act 2023</span>
+        <span class="badge badge-green">Encrypted</span>
+      </div>
+    </div>
+
+  </div><!-- /deep-section -->
+
+</div><!-- /phase-wrapper -->
+
+<p style="text-align:center;color:var(--muted);font-size:0.6rem;margin-top:36px;letter-spacing:1px">OTP · TELECOM API · UIDAI AADHAAR · CERSAI CKYCR · AI TRUST SCORING</p>
+
+</body>
+</html>

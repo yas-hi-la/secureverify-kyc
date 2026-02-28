@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureVerify — Deep Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d1117; --ink2: #1c2431; --ink3: #2d3748;
+    --muted: #64748b; --line: #e2e8f0; --surface: #f8fafc;
+    --white: #ffffff; --gold: #c9a84c; --green: #0d9488;
+    --red: #dc2626; --orange: #ea580c; --blue: #2563eb;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif; background: var(--surface);
+    color: var(--ink); min-height: 100vh; display: flex; flex-direction: column;
+  }
+
+  nav {
+    background: var(--white); border-bottom: 1px solid var(--line);
+    padding: 0 32px; height: 64px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+
+  .nav-brand { font-family: 'DM Serif Display', serif; font-size: 1.4rem; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+  .nav-brand span { width: 32px; height: 32px; background: var(--ink); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1rem; }
+  .nav-badge { font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 3px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  .steps-bar { background: var(--white); border-bottom: 1px solid var(--line); padding: 16px 32px; display: flex; align-items: center; gap: 0; overflow-x: auto; }
+  .step { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; border: 2px solid var(--line); color: var(--muted); background: var(--white); transition: all 0.3s; }
+  .step-label { font-size: 0.78rem; font-weight: 500; color: var(--muted); white-space: nowrap; transition: all 0.3s; }
+  .step.active .step-num { background: var(--ink); border-color: var(--ink); color: var(--gold); }
+  .step.active .step-label { color: var(--ink); font-weight: 600; }
+  .step.done .step-num { background: var(--green); border-color: var(--green); color: white; }
+  .step.done .step-label { color: var(--green); }
+  .step-connector { width: 40px; height: 2px; background: var(--line); flex-shrink: 0; margin: 0 4px; }
+  .step.done + .step-connector { background: var(--green); }
+
+  main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 40px 20px 60px; }
+
+  .card {
+    background: var(--white); border: 1px solid var(--line);
+    border-radius: 16px; width: 100%; max-width: 580px;
+    overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); animation: slideUp 0.4s ease;
+  }
+
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card-header { padding: 28px 32px 24px; border-bottom: 1px solid var(--line); background: var(--ink); color: white; position: relative; overflow: hidden; }
+  .card-header::after { content: ''; position: absolute; right: -20px; top: -20px; width: 120px; height: 120px; border-radius: 50%; background: rgba(201,168,76,0.12); }
+  .card-header h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; margin-bottom: 6px; position: relative; }
+  .card-header p  { font-size: 0.82rem; color: rgba(255,255,255,0.6); position: relative; }
+
+  .card-body { padding: 32px; }
+
+  /* ── FINGERPRINT SCANNER ─────────────── */
+  .fp-scanner {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .fp-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 3px solid var(--line);
+    margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .fp-circle:hover { border-color: var(--ink); transform: scale(1.02); }
+
+  .fp-circle.scanning {
+    border-color: var(--gold);
+    animation: pulse 1.5s infinite;
+  }
+
+  .fp-circle.scanned {
+    border-color: var(--green);
+    background: rgba(13,148,136,0.06);
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+    50% { box-shadow: 0 0 0 16px rgba(201,168,76,0); }
+  }
+
+  .fp-label {
+    font-size: 0.82rem; color: var(--muted); margin-bottom: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .fp-status {
+    font-size: 0.78rem; font-weight: 600;
+    color: var(--muted);
+  }
+
+  .fp-status.scanning { color: var(--orange); }
+  .fp-status.done { color: var(--green); }
+
+  /* ── LAYER STATUS LIST ───────────────── */
+  .layers-list { margin-bottom: 24px; }
+
+  .layer-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line);
+    margin-bottom: 10px; transition: all 0.3s; background: var(--white);
+  }
+
+  .layer-item.running {
+    border-color: rgba(201,168,76,0.4);
+    background: rgba(201,168,76,0.04);
+  }
+
+  .layer-item.pass {
+    border-color: rgba(13,148,136,0.3);
+    background: rgba(13,148,136,0.04);
+  }
+
+  .layer-item.fail {
+    border-color: rgba(220,38,38,0.3);
+    background: rgba(220,38,38,0.04);
+  }
+
+  .layer-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+
+  .layer-info { flex: 1; }
+
+  .layer-name {
+    font-size: 0.85rem; font-weight: 600; color: var(--ink); margin-bottom: 2px;
+  }
+
+  .layer-desc {
+    font-size: 0.73rem; color: var(--muted); font-family: 'DM Mono', monospace;
+  }
+
+  .layer-badge {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem; padding: 3px 8px;
+    border-radius: 6px; font-weight: 500; white-space: nowrap;
+  }
+
+  .badge-pending  { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
+  .badge-running  { background: rgba(201,168,76,0.1); color: #92742a; border: 1px solid rgba(201,168,76,0.3); }
+  .badge-pass     { background: rgba(13,148,136,0.1); color: var(--green); border: 1px solid rgba(13,148,136,0.3); }
+  .badge-fail     { background: rgba(220,38,38,0.1); color: var(--red); border: 1px solid rgba(220,38,38,0.3); }
+
+  /* ── BUTTON ──────────────────────────── */
+  .btn {
+    width: 100%; padding: 14px; border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .btn-primary { background: var(--ink); color: white; }
+  .btn-primary:hover { background: var(--ink2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+  .btn-primary:disabled { background: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; border-radius: 10px; font-size: 0.82rem; font-weight: 500; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { background: var(--ink); color: white; border-left: 4px solid var(--green); }
+  #toast.error   { background: var(--ink); color: white; border-left: 4px solid var(--red); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span>🔐</span> SecureVerify</div>
+  <span class="nav-badge">KYC Platform</span>
+</nav>
+
+<div class="steps-bar">
+  <div class="step done"><div class="step-num">✓</div><div class="step-label">Your Details</div></div>
+  <div class="step-connector"></div>
+  <div class="step done"><div class="step-num">✓</div><div class="step-label">OTP Verification</div></div>
+  <div class="step-connector"></div>
+  <div class="step active"><div class="step-num">3</div><div class="step-label">Deep Verification</div></div>
+  <div class="step-connector"></div>
+  <div class="step"><div class="step-num">4</div><div class="step-label">Result</div></div>
+</div>
+
+<main>
+  <div class="card">
+    <div class="card-header">
+      <h2>Deep Verification</h2>
+      <p>Running 3-layer identity check — SIM · Biometric · KYC</p>
+    </div>
+    <div class="card-body">
+
+      <!-- FINGERPRINT SCANNER -->
+      <div class="fp-scanner">
+        <div class="fp-circle" id="fpCircle" onclick="simulateScan()">
+          <span id="fpEmoji">👆</span>
+        </div>
+        <div class="fp-label">Tap to scan fingerprint</div>
+        <div class="fp-status" id="fpStatus">Waiting for scan...</div>
+      </div>
+
+      <!-- LAYER STATUS -->
+      <div class="layers-list">
+        <div class="layer-item" id="layer_sim">
+          <div class="layer-icon">📶</div>
+          <div class="layer-info">
+            <div class="layer-name">SIM Verification</div>
+            <div class="layer-desc">Telecom subscriber cross-check</div>
+          </div>
+          <span class="layer-badge badge-pending" id="badge_sim">PENDING</span>
+        </div>
+
+        <div class="layer-item" id="layer_fp">
+          <div class="layer-icon">👆</div>
+          <div class="layer-info">
+            <div class="layer-name">Fingerprint Biometric</div>
+            <div class="layer-desc">UIDAI Aadhaar authentication</div>
+          </div>
+          <span class="layer-badge badge-pending" id="badge_fp">PENDING</span>
+        </div>
+
+        <div class="layer-item" id="layer_kyc">
+          <div class="layer-icon">🗃️</div>
+          <div class="layer-info">
+            <div class="layer-name">KYC Cross-Check</div>
+            <div class="layer-desc">CERSAI / CKYCR registry</div>
+          </div>
+          <span class="layer-badge badge-pending" id="badge_kyc">PENDING</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="runBtn" onclick="runVerification()" disabled>
+        Run Verification →
+      </button>
+
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  const API = 'http://localhost:8000/api';
+  const sessionId = sessionStorage.getItem('session_id');
+  if (!sessionId) window.location.href = 'index.html';
+
+  let fingerprintToken = null;
+
+  function simulateScan() {
+    if (fingerprintToken) return;
+
+    const circle = document.getElementById('fpCircle');
+    const status = document.getElementById('fpStatus');
+    const emoji  = document.getElementById('fpEmoji');
+
+    circle.classList.add('scanning');
+    status.className = 'fp-status scanning';
+    status.textContent = 'Scanning fingerprint...';
+    emoji.textContent = '🔄';
+
+    setTimeout(() => {
+      // Generate mock fingerprint token
+      fingerprintToken = 'fp_' + sessionId + '_' + Date.now();
+      circle.classList.remove('scanning');
+      circle.classList.add('scanned');
+      status.className = 'fp-status done';
+      status.textContent = '✓ Fingerprint captured successfully';
+      emoji.textContent = '✅';
+      document.getElementById('runBtn').disabled = false;
+      showToast('Fingerprint captured! Click Run Verification.', 'success');
+    }, 2000);
+  }
+
+  function setLayerStatus(layer, status) {
+    const item  = document.getElementById(`layer_${layer}`);
+    const badge = document.getElementById(`badge_${layer}`);
+    item.className  = `layer-item ${status}`;
+    badge.className = `layer-badge badge-${status}`;
+    badge.textContent = status.toUpperCase();
+  }
+
+  async function runVerification() {
+    if (!fingerprintToken) { showToast('Please scan fingerprint first', 'error'); return; }
+
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Verifying all 3 layers...';
+
+    // Animate layers as running
+    ['sim', 'fp', 'kyc'].forEach((l, i) => {
+      setTimeout(() => setLayerStatus(l, 'running'), i * 400);
+    });
+
+    try {
+      const res  = await fetch(`${API}/verify/full`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ session_id: sessionId, fingerprint_token: fingerprintToken }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.detail || 'Verification failed', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Run Verification →';
+        return;
+      }
+
+      // Update layer badges based on result
+      setTimeout(() => {
+        setLayerStatus('sim', data.sim_layer.passed         ? 'pass' : 'fail');
+        setLayerStatus('fp',  data.fingerprint_layer.passed ? 'pass' : 'fail');
+        setLayerStatus('kyc', data.kyc_layer.passed         ? 'pass' : 'fail');
+
+        // Store result and navigate
+        sessionStorage.setItem('verif_result', JSON.stringify(data));
+        showToast('Verification complete! Loading result...', 'success');
+        setTimeout(() => { window.location.href = 'result.html'; }, 1400);
+      }, 1800);
+
+    } catch (err) {
+      showToast('Connection error. Is the backend running?', 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Run Verification →';
+    }
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = `show ${type}`;
+    setTimeout(() => t.className = '', 3500);
+  }
+</script>
+</body>
+</html>
